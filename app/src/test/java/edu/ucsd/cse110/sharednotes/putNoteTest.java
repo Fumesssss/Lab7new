@@ -15,10 +15,10 @@ public class putNoteTest {
 
         NoteAPI api = new NoteAPI();
 
-        Note newNote = api.putNote(note);
+        api.putNote(note);
 
 
-        assertEquals("cguotest10", newNote.title);
+        assertEquals("cguotest10", note.title);
     }
 
 }

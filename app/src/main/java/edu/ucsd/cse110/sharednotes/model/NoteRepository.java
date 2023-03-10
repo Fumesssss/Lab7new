@@ -128,7 +128,7 @@ public class NoteRepository {
     public void upsertRemote(Note note) {
         // TODO: Implement upsertRemote!
         NoteAPI api = new NoteAPI();
-        Note newNote = api.putNote(note);
+        api.putNote(note);
         //System.out.println(newNote.title);
     }
 }

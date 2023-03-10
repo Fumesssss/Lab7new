@@ -94,27 +94,31 @@ public class NoteAPI {
 
     }
     @WorkerThread
-    public Note putNote(Note note){
+    public void putNote(Note note){
+        var executor = Executors.newSingleThreadExecutor();
         String title = note.title;
-        //System.out.println(note.title+" "+note.content+" "+note.version);
-        String jsonNote = note.toJSON();
 
-        MediaType JSON = MediaType.get("application/json; charset=utf-8");
-        RequestBody Rbody = RequestBody.create(jsonNote, JSON);
+        var future = executor.submit(() -> {
+            String encodedTitle = title.replace(" ", "%20");
 
-        var request = new Request.Builder()
-                .url("https://sharednotes.goto.ucsd.edu/notes/" + title)
-                .post(Rbody)
-                .method("PUT", Rbody)
-                .build();
+            MediaType JSON = MediaType.get("application/json; charset=utf-8");
+            String jsonNote = note.toJSON();
+            RequestBody Rbody = RequestBody.create(jsonNote, JSON);
 
-        try (var response = client.newCall(request).execute()) {
-            assert response.body() != null;
-            System.out.println(note.title+" "+note.content+" "+note.version);
-            return note;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+            var request = new Request.Builder()
+                    .url("https://sharednotes.goto.ucsd.edu/notes/" + encodedTitle)
+                    .post(Rbody)
+                    .method("PUT", Rbody)
+                    .build();
+
+            try (var response = client.newCall(request).execute()) {
+                assert response.body() != null;
+                System.out.println(note.title+" "+note.content+" "+note.version);
+                return note;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        });
     }
 }
