@@ -1,18 +1,20 @@
 package edu.ucsd.cse110.sharednotes.model;
 
+import static edu.ucsd.cse110.sharednotes.model.Note.fromJSON;
+
 import android.util.Log;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.MainThread;
 import androidx.annotation.WorkerThread;
 
-import com.google.gson.Gson;
-
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 
 public class NoteAPI {
     // TODO: Implement the API using OkHttp!
@@ -72,5 +74,47 @@ public class NoteAPI {
 
         // We can use future.get(1, SECONDS) to wait for the result.
         return future;
+    }
+
+    @WorkerThread
+    public Note getNote(String title){
+
+        var request = new Request.Builder()
+                .url("https://sharednotes.goto.ucsd.edu/notes/" + title)
+                .build();
+
+        try (var response = client.newCall(request).execute()) {
+            assert response.body() != null;
+            var body = response.body().string();
+            return fromJSON(body);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+
+    }
+    @WorkerThread
+    public Note putNote(Note note){
+        String title = note.title;
+        //System.out.println(note.title+" "+note.content+" "+note.version);
+        String jsonNote = note.toJSON();
+
+        MediaType JSON = MediaType.get("application/json; charset=utf-8");
+        RequestBody Rbody = RequestBody.create(jsonNote, JSON);
+
+        var request = new Request.Builder()
+                .url("https://sharednotes.goto.ucsd.edu/notes/" + title)
+                .post(Rbody)
+                .method("PUT", Rbody)
+                .build();
+
+        try (var response = client.newCall(request).execute()) {
+            assert response.body() != null;
+            System.out.println(note.title+" "+note.content+" "+note.version);
+            return note;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }

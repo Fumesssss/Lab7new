@@ -2,12 +2,15 @@ package edu.ucsd.cse110.sharednotes.model;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
+import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 public class NoteRepository {
     private final NoteDao dao;
@@ -99,16 +102,33 @@ public class NoteRepository {
         }
 
         // Set up a background thread that will poll the server every 3 seconds.
+        NoteAPI api = new NoteAPI();
+        MutableLiveData<Note> realNoteData = new MutableLiveData<>();
+
+        MediatorLiveData<Note> noteData;
+
+        var executor = Executors.newSingleThreadScheduledExecutor();
+
+        this.poller = executor.scheduleAtFixedRate(() -> {
+            Note result = api.getNote(title);
+            result.version++;
+            realNoteData.postValue(result);
+        }, 0, 3000, TimeUnit.MILLISECONDS);
+
+        noteData = new MediatorLiveData<>();
+        noteData.addSource(realNoteData, noteData::postValue);
+
 
         // You may (but don't have to) want to cache the LiveData's for each title, so that
         // you don't create a new polling thread every time you call getRemote with the same title.
         // You don't need to worry about killing background threads.
-
-        throw new UnsupportedOperationException("Not implemented yet");
+        return noteData;
     }
 
     public void upsertRemote(Note note) {
         // TODO: Implement upsertRemote!
-        throw new UnsupportedOperationException("Not implemented yet");
+        NoteAPI api = new NoteAPI();
+        Note newNote = api.putNote(note);
+        //System.out.println(newNote.title);
     }
 }
